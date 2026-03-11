@@ -14,8 +14,8 @@ with open('small.tarun', 'r') as file:
 
 
 try:
-    parser = Parser(tokens, show_tree=True, show_left=True, show_right=True)
-    parser.parse_program()
+    parser = Parser(tokens, show_tree=True, show_left=True, show_right=True, show_gui_tree=True)
+    root = parser.parse_program()
 except SyntaxError as e:
     print("Syntax Error:", e)
 

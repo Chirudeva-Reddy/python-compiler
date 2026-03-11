@@ -5,12 +5,13 @@ class Node:
         self.is_terminal = is_terminal
 
 class Parser:
-    def __init__(self, tokens, show_left=False, show_right=False, show_tree=False):
+    def __init__(self, tokens, show_left=False, show_right=False, show_tree=False, show_gui_tree=False):
         self.tokens = tokens
         self.pos = 0
         self.show_left = show_left
         self.show_right = show_right
         self.show_tree = show_tree
+        self.show_gui_tree = show_gui_tree
 
     def current_token(self):
         return self.tokens[self.pos] if self.pos < len(self.tokens) else (None, None)
@@ -81,6 +82,9 @@ class Parser:
         while self.pos < len(self.tokens):
             root.children.append(self.parse_statement())
         print("Syntactic Validation Successful.")
+        if self.show_gui_tree:
+            from tree_view import draw_with_nltk
+            draw_with_nltk(root, hide_terminals=True)
         if self.show_tree:
             print("\nParse Tree:")
             self.print_tree(root)
@@ -88,6 +92,7 @@ class Parser:
             self.display_derivation(root, mode="left")
         if self.show_right:
             self.display_derivation(root, mode="right")
+        return root
 
     def parse_statement(self):
         kind, value = self.current_token()
@@ -222,4 +227,8 @@ class Parser:
         node.children.append(self.eat('semicolon'))
         return node
 
+
+# Usage:
+# p = Parser(tokens, show_gui_tree=True)
+# root = p.parse_program()
 
