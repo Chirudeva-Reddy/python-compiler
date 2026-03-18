@@ -153,6 +153,8 @@ class Parser:
             node.children.append(self.eat('left_parenthesis'))
             node.children.append(self.parse_expr())
             node.children.append(self.eat('right_parenthesis'))
+        else:
+            raise SyntaxError(f"Expected factor, got {kind} at position {self.pos}")
         return node
 
     def parse_if(self):
