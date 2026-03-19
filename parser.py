@@ -14,16 +14,64 @@ class Parser:
         self.show_gui_tree = show_gui_tree
 
     def current_token(self):
-        return self.tokens[self.pos] if self.pos < len(self.tokens) else (None, None)
+        if self.pos < len(self.tokens):
+            return self.tokens[self.pos]
+        if self.tokens:
+            _, value, line, col = self.tokens[-1]
+            return (None, None, line, col + len(value))
+        return (None, None, 1, 1)
+
+    def previous_token(self):
+        return self.tokens[self.pos - 1] if self.pos > 0 else (None, None, 1, 1)
+
+    def token_label(self, kind):
+        labels = {
+            'semicolon': "';'",
+            'left_parenthesis': "'('",
+            'right_parenthesis': "')'",
+            'left_brace': "'{'",
+            'right_brace': "'}'",
+            'assignment': "'='",
+        }
+        return labels.get(kind, kind)
+
+    def token_description(self, kind, value):
+        if kind is None:
+            return 'EOF'
+        return f"{kind} {value!r}"
+
+    def error_here(self, expected_kind=None, message=None, line=None, col=None):
+        kind, value, token_line, token_col = self.current_token()
+        if line is None:
+            line = token_line
+        if col is None:
+            col = token_col
+        if message is None:
+            message = (
+                f"syntax error: expected {self.token_label(expected_kind)}, "
+                f"got {self.token_description(kind, value)}"
+            )
+        error = SyntaxError(f"{message} at line {line}, column {col}")
+        error.line = line
+        error.col = col
+        error.message_only = message
+        raise error
 
     def eat(self, expected_kind):
-        kind, value = self.current_token()
+        kind, value, _, _ = self.current_token()  #kind and value have been defined in the lexer, so we can use them here to check if the current token matches the expected kind.
         if kind == expected_kind:
             self.pos += 1
             return Node(value, is_terminal=True)
         else:
-            print(self.current_token())
-            raise SyntaxError(f"Expected {expected_kind}, got {kind} at position {self.pos}")
+            if expected_kind == 'semicolon' and self.pos > 0:
+                _, prev_value, prev_line, prev_col = self.previous_token()
+                self.error_here(
+                    expected_kind=expected_kind,
+                    message=f"syntax error: expected ';', got {self.token_description(kind, value)}",
+                    line=prev_line,
+                    col=prev_col + len(prev_value),
+                )
+            self.error_here(expected_kind=expected_kind)
         
     def print_tree(self, node, level=0):
         if self.show_tree:
@@ -95,16 +143,17 @@ class Parser:
         return root
 
     def parse_statement(self):
-        kind, value = self.current_token()
+        kind, value, _, _ = self.current_token()
         node = Node("Statement")
         if kind == 'keyword':
             if value in ['int', 'float']: node.children.append(self.parse_declaration())
             elif value == 'if': node.children.append(self.parse_if())
             elif value == 'while': node.children.append(self.parse_while())
             elif value == 'print': node.children.append(self.parse_print())
+            else: self.error_here(message=f"syntax error: unexpected start of statement: {self.token_description(kind, value)}")
         elif kind == 'left_brace': node.children.append(self.parse_block())
         elif kind == 'identifier': node.children.append(self.parse_assignment())
-        else: raise SyntaxError(f"Unexpected start of statement: {kind}")
+        else: self.error_here(message=f"syntax error: unexpected start of statement: {self.token_description(kind, value)}")
         return node
 
     def parse_declaration(self):
@@ -146,7 +195,7 @@ class Parser:
 
     def parse_factor(self):
         node = Node("Factor")
-        kind, value = self.current_token()
+        kind, value, _, _ = self.current_token()
         if kind == 'integer_constant' or kind == 'float_constant': node.children.append(self.eat(kind))
         elif kind == 'identifier': node.children.append(self.eat('identifier'))
         elif kind == 'left_parenthesis':
@@ -154,7 +203,7 @@ class Parser:
             node.children.append(self.parse_expr())
             node.children.append(self.eat('right_parenthesis'))
         else:
-            raise SyntaxError(f"Expected factor, got {kind} at position {self.pos}")
+            self.error_here(message=f"syntax error: expected factor, got {self.token_description(kind, value)}")
         return node
 
     def parse_if(self):
@@ -196,7 +245,7 @@ class Parser:
 
     def parse_bool_factor(self):
         node = Node("BooleanFactor")
-        kind, value = self.current_token()
+        kind, value, _, _ = self.current_token()
         
         if value == '!':
             node.children.append(self.eat('boolean_operator'))
@@ -216,6 +265,8 @@ class Parser:
         node = Node("Block")
         node.children.append(self.eat('left_brace'))
         while self.current_token()[0] != 'right_brace':
+            if self.current_token()[0] is None:
+                self.error_here(message="syntax error: expected '}' to close block")
             node.children.append(self.parse_statement())
         node.children.append(self.eat('right_brace'))
         return node
@@ -233,4 +284,3 @@ class Parser:
 # Usage:
 # p = Parser(tokens, show_gui_tree=True)
 # root = p.parse_program()
-

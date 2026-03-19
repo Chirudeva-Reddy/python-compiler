@@ -14,6 +14,13 @@
 
 import re
 
+class LexerError(RuntimeError):
+    def __init__(self, message, line, col):
+        super().__init__(f"{message} at line {line}, column {col}")
+        self.line = line
+        self.col = col
+        self.message_only = message
+
 class Lexer:
     rules = [
     ('keyword',           r'\b(int|float|if|else|while|print)\b'),
@@ -40,15 +47,21 @@ class Lexer:
 
     def tokenize(self, code):
         tokens = []
+        line = 1
+        line_start = 0
         for mo in re.finditer(self.re_rules, code):
             kind = mo.lastgroup
             value = mo.group()
+            col = mo.start() - line_start + 1  #tracking column number.
             # print(f"Matched {kind}: '{value}'")  
             if kind == 'skip':
+                newline_count = value.count('\n')
+                if newline_count:
+                    line += newline_count  #tracking line number.
+                    line_start = mo.start() + value.rfind('\n') + 1
                 continue
             elif kind == 'mismatch':
-                raise RuntimeError(f'Unexpected character: {value}')
+                raise LexerError(f"Unexpected character '{value}'", line, col)
             else:
-                tokens.append((kind, value))
+                tokens.append((kind, value, line, col)) # Lexer returns 4 things but we are hiding line,column while printing using _,_ in test.py.
         return tokens
-

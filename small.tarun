@@ -1,4 +1,4 @@
-if (x <= 10) {
-    print(hello);
-    x = x + 1;
+int a;
+while () {
+    a = a + 1;
 }
