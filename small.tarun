@@ -1,4 +1,4 @@
-int a;
-while () {
-    a = a + 1;
+int a
+while (h) {
+    a = a + 1
 }

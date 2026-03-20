@@ -1,5 +1,5 @@
 from lexer import Lexer, LexerError
-from parser import Parser
+from parser import Parser, SyntaxErrors
 
 lexer = Lexer()
 
@@ -14,14 +14,14 @@ def print_error(filename, src, line, col, message):
     print(source_line)
     print(" " * (max(col, 1) - 1) + "^") 
 
-with open('small.tarun', 'r') as file:
+with open('code.tarun', 'r') as file:
     code = file.read()
     try:
         tokens = lexer.tokenize(code)
         print("Tokens:", [(kind, value) for kind, value, _, _ in tokens]) #hiding line and col number while printing.
     except LexerError as e:
         print_error(
-            "small.tarun",
+            "code.tarun",
             code,
             getattr(e, "line", 1),
             getattr(e, "col", 1),
@@ -33,9 +33,18 @@ with open('small.tarun', 'r') as file:
 try:
     parser = Parser(tokens, show_tree=True, show_left=True, show_right=True, show_gui_tree=True)
     root = parser.parse_program()
+except SyntaxErrors as errors:
+    for error in errors.errors:
+        print_error(
+            "code.tarun",
+            code,
+            getattr(error, "line", 1),
+            getattr(error, "col", 1),
+            getattr(error, "message_only", str(error)),
+        )
 except SyntaxError as e:
     print_error(
-        "small.tarun",
+        "code.tarun",
         code,
         getattr(e, "line", 1),
         getattr(e, "col", 1),

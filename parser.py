@@ -4,10 +4,16 @@ class Node:
         self.children = children if children else []
         self.is_terminal = is_terminal
 
+class SyntaxErrors(Exception):
+    def __init__(self, errors):
+        super().__init__(f"{len(errors)} syntax error(s)")
+        self.errors = errors
+
 class Parser:
     def __init__(self, tokens, show_left=False, show_right=False, show_tree=False, show_gui_tree=False):
         self.tokens = tokens
         self.pos = 0
+        self.errors = []
         self.show_left = show_left
         self.show_right = show_right
         self.show_tree = show_tree
@@ -40,7 +46,7 @@ class Parser:
             return 'EOF'
         return f"{kind} {value!r}"
 
-    def error_here(self, expected_kind=None, message=None, line=None, col=None):
+    def make_error(self, expected_kind=None, message=None, line=None, col=None):
         kind, value, token_line, token_col = self.current_token()
         if line is None:
             line = token_line
@@ -55,7 +61,55 @@ class Parser:
         error.line = line
         error.col = col
         error.message_only = message
+        return error
+
+    def error_here(self, expected_kind=None, message=None, line=None, col=None):
+        error = self.make_error(expected_kind=expected_kind, message=message, line=line, col=col)
         raise error
+
+    def is_statement_start(self, kind, value):
+        return (
+            kind == 'left_brace'
+            or kind == 'identifier'
+            or (kind == 'keyword' and value in ['int', 'float', 'if', 'while', 'print'])
+        )
+
+    def synchronize(self, stop_kind=None): #added function to synchronize the parser after encountering a syntax error, allowing it to continue parsing and report multiple errors in one run.
+        while self.pos < len(self.tokens):
+            kind, value, line, _ = self.current_token()
+            prev_kind, _, prev_line, _ = self.previous_token()
+
+            if stop_kind is not None and kind == stop_kind:
+                return True
+            if kind == 'semicolon':
+                self.pos += 1
+                return True
+            if kind == 'left_brace' or (kind == 'keyword' and value in ['int', 'float', 'if', 'while', 'print']):
+                return True
+            if kind == 'identifier' and (line > prev_line or prev_kind in ['semicolon', 'left_brace', 'right_brace']):
+                return True
+
+            self.pos += 1
+        return False
+
+    def parse_statement_list(self, stop_kind=None):
+        nodes = []
+        while self.pos < len(self.tokens):
+            kind, _, _, _ = self.current_token()
+            if stop_kind is not None and kind == stop_kind:
+                break
+            if kind is None:
+                break
+            try:
+                nodes.append(self.parse_statement())
+            except SyntaxError as error:
+                self.errors.append(error)
+                if not self.synchronize(stop_kind=stop_kind):
+                    break
+
+        if stop_kind == 'right_brace' and self.current_token()[0] is None:
+            self.errors.append(self.make_error(message="syntax error: expected '}' to close block"))
+        return nodes
 
     def eat(self, expected_kind):
         kind, value, _, _ = self.current_token()  #kind and value have been defined in the lexer, so we can use them here to check if the current token matches the expected kind.
@@ -127,8 +181,9 @@ class Parser:
 
     def parse_program(self):
         root = Node("Program")  
-        while self.pos < len(self.tokens):
-            root.children.append(self.parse_statement())
+        root.children.extend(self.parse_statement_list())
+        if self.errors:
+            raise SyntaxErrors(self.errors)
         print("Syntactic Validation Successful.")
         if self.show_gui_tree:
             from tree_view import draw_with_nltk
@@ -264,11 +319,9 @@ class Parser:
     def parse_block(self):
         node = Node("Block")
         node.children.append(self.eat('left_brace'))
-        while self.current_token()[0] != 'right_brace':
-            if self.current_token()[0] is None:
-                self.error_here(message="syntax error: expected '}' to close block")
-            node.children.append(self.parse_statement())
-        node.children.append(self.eat('right_brace'))
+        node.children.extend(self.parse_statement_list(stop_kind='right_brace'))
+        if self.current_token()[0] == 'right_brace':
+            node.children.append(self.eat('right_brace'))
         return node
 
     def parse_print(self):
