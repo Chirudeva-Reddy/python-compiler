@@ -1,5 +1,4 @@
 int a;
-while (a<3) {
+while () {
     a = a + 1;
-    + 2;
 }
