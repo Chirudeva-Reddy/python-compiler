@@ -1,286 +1,159 @@
 class Node:
     def __init__(self, name, children=None, is_terminal=False):
-        self.name = name
-        self.children = children if children else []
-        self.is_terminal = is_terminal
+        self.name, self.children, self.is_terminal = name, children or [], is_terminal
 
-class Parser:
+class SyntaxErrors(Exception):
+    def __init__(self, errors):
+        super().__init__(f"{len(errors)} syntax error(s)")
+        self.errors = errors
+
+class Parser:  #All the functions defined below are parts of Parser class.
     def __init__(self, tokens, show_left=False, show_right=False, show_tree=False, show_gui_tree=False):
-        self.tokens = tokens
-        self.pos = 0
-        self.show_left = show_left
-        self.show_right = show_right
-        self.show_tree = show_tree
-        self.show_gui_tree = show_gui_tree
+        self.tokens, self.pos, self.errors = tokens, 0, []
+        self.flags = {'left': show_left, 'right': show_right, 'tree': show_tree, 'gui': show_gui_tree}
+        self.lbls = {'semicolon': "';'", 'left_parenthesis': "'('", 'right_parenthesis': "')'", 'left_brace': "'{'", 'right_brace': "'}'", 'assignment': "'='"}
 
-    def current_token(self):
+#decorator to make a method behave like an attribute, so that we can access the current token as self.curr instead of self.curr().
+    @property  
+    def curr(self):
         if self.pos < len(self.tokens):
             return self.tokens[self.pos]
-        if self.tokens:
-            _, value, line, col = self.tokens[-1]
-            return (None, None, line, col + len(value))
-        return (None, None, 1, 1)
 
-    def previous_token(self):
+        if len(self.tokens) > 0:
+            line = self.tokens[-1][2] #getting the line no. of the LAST token, as list[-1] gives the last index.
+            col = self.tokens[-1][3] + len(str(self.tokens[-1][1])) #doing the same for column.
+                                         #finding the length of the value of last token.
+        else:      #if no tokens are present, we assume line 1,column 1.                    
+            line = 1
+            col = 1
+# note: (kind, value, line, col) this is the structure of a token. 
+        return (None, None, line, col)
+
+    @property
+    def prev(self):  #returns the prevous token.
         return self.tokens[self.pos - 1] if self.pos > 0 else (None, None, 1, 1)
 
-    def token_label(self, kind):
-        labels = {
-            'semicolon': "';'",
-            'left_parenthesis': "'('",
-            'right_parenthesis': "')'",
-            'left_brace': "'{'",
-            'right_brace': "'}'",
-            'assignment': "'='",
-        }
-        return labels.get(kind, kind)
+    def token_desc(self, k, v): return f"{k} {v!r}" if k else 'EOF' # where k is kind and v is value.
 
-    def token_description(self, kind, value):
-        if kind is None:
-            return 'EOF'
-        return f"{kind} {value!r}"
+    #gets current token and raises an error.
+    def error_here(self, exp=None, msg=None, line=None, col=None): #initialization to "none" assuming base case is no error.
+        k, v, l, c = self.curr
+        msg = msg or f"syntax error: expected {self.lbls.get(exp, exp)}, got {self.token_desc(k, v)}"
+        err = SyntaxError(f"{msg} at line {line or l}, column {col or c}")
+        err.line, err.col, err.message_only = line or l, col or c, msg
+        raise err
 
-    def error_here(self, expected_kind=None, message=None, line=None, col=None):
-        kind, value, token_line, token_col = self.current_token()
-        if line is None:
-            line = token_line
-        if col is None:
-            col = token_col
-        if message is None:
-            message = (
-                f"syntax error: expected {self.token_label(expected_kind)}, "
-                f"got {self.token_description(kind, value)}"
-            )
-        error = SyntaxError(f"{message} at line {line}, column {col}")
-        error.line = line
-        error.col = col
-        error.message_only = message
-        raise error
-
-    def eat(self, expected_kind):
-        kind, value, _, _ = self.current_token()  #kind and value have been defined in the lexer, so we can use them here to check if the current token matches the expected kind.
-        if kind == expected_kind:
+    # after the first syntax error, we skip the tokens until we find a better restart point.
+    def synchronize(self, stop_kind=None):
+        while self.curr[0]:
+            k, v, l, _ = self.curr
+            pk, _, pl, _ = self.prev
+            if k == stop_kind or (k == 'identifier' and (l > pl or pk in ['semicolon', 'left_brace', 'right_brace'])): return True
             self.pos += 1
-            return Node(value, is_terminal=True)
-        else:
-            if expected_kind == 'semicolon' and self.pos > 0:
-                _, prev_value, prev_line, prev_col = self.previous_token()
-                self.error_here(
-                    expected_kind=expected_kind,
-                    message=f"syntax error: expected ';', got {self.token_description(kind, value)}",
-                    line=prev_line,
-                    col=prev_col + len(prev_value),
-                )
-            self.error_here(expected_kind=expected_kind)
-        
-    def print_tree(self, node, level=0):
-        if self.show_tree:
-            print("  " * level + "|-- " + str(node.name))
-            for child in node.children:
-                self.print_tree(child, level + 1)
+            if k in ['semicolon', 'left_brace'] or (k == 'keyword' and v in ['int', 'float', 'if', 'while', 'print']): return True
+        return False
 
-    def get_derivation(self, root, mode="left"):
-        steps = []
-        current_sentential_form = [root]
+    # this function consumes the current token if it matches the expected kind.
+    def eat(self, exp):
+        k, v, _, _ = self.curr 
+        if k == exp: #if the current token's kind matches expected, we increment position.
+            self.pos += 1
+            return Node(v, is_terminal=True)
+        if exp == 'semicolon' and self.pos > 0:
+            self.error_here(exp,line=self.prev[2], col=self.prev[3] + len(str(self.prev[1])))
+        self.error_here(exp)
 
-        def is_complete(form):
-            return all(n.is_terminal for n in form)
+    def parse_statement_list(self, stop_kind=None):
+        nodes = []
+        while self.curr[0] and self.curr[0] != stop_kind:
+            try: nodes.append(self.parse_statement())
+            except SyntaxError as e:
+                self.errors.append(e)
+                if not self.synchronize(stop_kind): break #calls sync function and breaks if it reaches EOF.
+        if stop_kind == 'right_brace' and not self.curr[0]: #note: self.curr[0] is the kind.
+            self.errors.append(self.error_here(msg="syntax error: expected '}' to close block"))
+        return nodes
 
-        def get_labels(form):
-            return " ".join([n.name for n in form])
+    def _binop(self, name, func, tk, ops=None):
+        n = Node(name, [func()])
+        while self.curr[0] == tk and (not ops or self.curr[1] in ops):
+            n.children.extend([self.eat(tk), func()])
+        return n
 
-        steps.append(get_labels(current_sentential_form))
-
-        while not is_complete(current_sentential_form):
-            new_form = []
-            expanded = False
-
-            iterator = range(len(current_sentential_form))
-            if mode == "right":
-                iterator = reversed(iterator)
-
-            target_idx = -1
-            for i in iterator:
-                if not current_sentential_form[i].is_terminal:
-                    target_idx = i
-                    break
-            
-            for i in range(len(current_sentential_form)):
-                if i == target_idx and not expanded:
-                    new_form.extend(current_sentential_form[i].children)
-                    expanded = True
-                else:
-                    new_form.append(current_sentential_form[i])
-            
-            current_sentential_form = new_form
-            steps.append(get_labels(current_sentential_form))
-        
-        return steps
-
-    def display_derivation(self, node, mode="left"):
-        print(f"\n--- {mode.capitalize()}most Derivation ---")
-        steps = self.get_derivation(node, mode=mode)
-        for i, step in enumerate(steps):
-            arrow = "=>" if i > 0 else "  "
-            print(f" {arrow} {step}")
-
-
-    def parse_program(self):
-        root = Node("Program")  
-        while self.pos < len(self.tokens):
-            root.children.append(self.parse_statement())
-        print("Syntactic Validation Successful.")
-        if self.show_gui_tree:
-            from tree_view import draw_with_nltk
-            draw_with_nltk(root, hide_terminals=True)
-        if self.show_tree:
-            print("\nParse Tree:")
-            self.print_tree(root)
-        if self.show_left:
-            self.display_derivation(root, mode="left")
-        if self.show_right:
-            self.display_derivation(root, mode="right")
-        return root
-
-    def parse_statement(self):
-        kind, value, _, _ = self.current_token()
-        node = Node("Statement")
-        if kind == 'keyword':
-            if value in ['int', 'float']: node.children.append(self.parse_declaration())
-            elif value == 'if': node.children.append(self.parse_if())
-            elif value == 'while': node.children.append(self.parse_while())
-            elif value == 'print': node.children.append(self.parse_print())
-            else: self.error_here(message=f"syntax error: unexpected start of statement: {self.token_description(kind, value)}")
-        elif kind == 'left_brace': node.children.append(self.parse_block())
-        elif kind == 'identifier': node.children.append(self.parse_assignment())
-        else: self.error_here(message=f"syntax error: unexpected start of statement: {self.token_description(kind, value)}")
-        return node
-
-    def parse_declaration(self):
-        node = Node("Declaration")
-        node.children.append(self.eat('keyword')) # type
-        node.children.append(self.eat('identifier'))
-        node.children.append(self.eat('semicolon'))
-        return node
-
-    def parse_assignment(self):
-        node = Node("Assignment")
-        node.children.append(self.eat('identifier'))
-        node.children.append(self.eat('assignment'))
-        node.children.append(self.parse_expr())
-        node.children.append(self.eat('semicolon'))
-        return node
-
-    def parse_expr(self):
-        node = Node("Expression")
-        node.children.append(self.parse_term())
-        while self.current_token()[0] in ['arithmetic_operator']:
-            op = self.current_token()[1]
-            if op in ['+', '-']:
-                node.children.append(self.eat('arithmetic_operator'))
-                node.children.append(self.parse_term())
-            else: break
-        return node
-
-    def parse_term(self):
-        node = Node("Term")
-        node.children.append(self.parse_factor())
-        while self.current_token()[0] in ['arithmetic_operator']:
-            op = self.current_token()[1]
-            if op in ['*', '/', '%']:
-                node.children.append(self.eat('arithmetic_operator'))
-                node.children.append(self.parse_factor())
-            else: break
-        return node
+    #Parse addition and subtraction.
+    def parse_expr(self): return self._binop("Expression", self.parse_term, 'arithmetic_operator', ['+', '-'])
+    #Parse mul, div, mod.
+    def parse_term(self): return self._binop("Term", self.parse_factor, 'arithmetic_operator', ['*', '/', '%'])
+    #Parse logical OR.
+    def parse_bool_expr(self): return self._binop("BooleanExpression", self.parse_bool_term, 'boolean_operator', ['||'])
+    #Parse logical AND.
+    def parse_bool_term(self): return self._binop("BooleanTerm", self.parse_bool_factor, 'boolean_operator', ['&&'])
 
     def parse_factor(self):
-        node = Node("Factor")
-        kind, value, _, _ = self.current_token()
-        if kind == 'integer_constant' or kind == 'float_constant': node.children.append(self.eat(kind))
-        elif kind == 'identifier': node.children.append(self.eat('identifier'))
-        elif kind == 'left_parenthesis':
-            node.children.append(self.eat('left_parenthesis'))
-            node.children.append(self.parse_expr())
-            node.children.append(self.eat('right_parenthesis'))
-        else:
-            self.error_here(message=f"syntax error: expected factor, got {self.token_description(kind, value)}")
-        return node
-
-    def parse_if(self):
-        node = Node("IfStatement")
-        node.children.append(self.eat('keyword')) # if
-        node.children.append(self.eat('left_parenthesis'))
-        node.children.append(self.parse_bool_expr())
-        node.children.append(self.eat('right_parenthesis'))
-        node.children.append(self.parse_statement())
-        if self.current_token()[1] == 'else':
-            node.children.append(self.eat('keyword'))
-            node.children.append(self.parse_statement())
-        return node
-
-    def parse_while(self):
-        node = Node("WhileStatement")
-        node.children.append(self.eat('keyword')) # while
-        node.children.append(self.eat('left_parenthesis'))
-        node.children.append(self.parse_bool_expr())
-        node.children.append(self.eat('right_parenthesis'))
-        node.children.append(self.parse_statement())
-        return node
-
-    def parse_bool_expr(self):
-        node = Node("BooleanExpression")
-        node.children.append(self.parse_bool_term())
-        while self.current_token()[1] == '||':
-            node.children.append(self.eat('boolean_operator'))
-            node.children.append(self.parse_bool_term())
-        return node
-
-    def parse_bool_term(self):
-        node = Node("BooleanTerm")
-        node.children.append(self.parse_bool_factor())
-        while self.current_token()[1] == '&&':
-            node.children.append(self.eat('boolean_operator'))
-            node.children.append(self.parse_bool_factor())
-        return node
+        k, v = self.curr[:2]
+        if k in ['integer_constant', 'float_constant', 'identifier']: return Node("Factor", [self.eat(k)])
+        if k == 'left_parenthesis': return Node("Factor", [self.eat('left_parenthesis'), self.parse_expr(), self.eat('right_parenthesis')])
+        self.error_here(msg=f"syntax error: expected factor, got {self.token_desc(k, v)}")
 
     def parse_bool_factor(self):
-        node = Node("BooleanFactor")
-        kind, value, _, _ = self.current_token()
-        
-        if value == '!':
-            node.children.append(self.eat('boolean_operator'))
-            node.children.append(self.parse_bool_factor())
-        elif value == '(':
-            node.children.append(self.eat('left_parenthesis'))
-            node.children.append(self.parse_bool_expr())
-            node.children.append(self.eat('right_parenthesis'))
-        else:
-            node.children.append(self.parse_expr())
-            if self.current_token()[0] == 'relational_operator':
-                node.children.append(self.eat('relational_operator'))
-                node.children.append(self.parse_expr())
-        return node
+        v = self.curr[1]
+        if v == '!': return Node("BooleanFactor", [self.eat('boolean_operator'), self.parse_bool_factor()])
+        if v == '(': return Node("BooleanFactor", [self.eat('left_parenthesis'), self.parse_bool_expr(), self.eat('right_parenthesis')])
+        kids = [self.parse_expr()]
+        if self.curr[0] == 'relational_operator': kids.extend([self.eat('relational_operator'), self.parse_expr()])
+        return Node("BooleanFactor", kids)
 
-    def parse_block(self):
-        node = Node("Block")
-        node.children.append(self.eat('left_brace'))
-        while self.current_token()[0] != 'right_brace':
-            if self.current_token()[0] is None:
-                self.error_here(message="syntax error: expected '}' to close block")
-            node.children.append(self.parse_statement())
-        node.children.append(self.eat('right_brace'))
-        return node
+    def parse_statement(self):
+        k, v = self.curr[:2]
+        #declaring a variable: int x; or float y;
+        if k == 'keyword' and v in ['int', 'float']: return Node("Statement", [Node("Declaration", [self.eat('keyword'), self.eat('identifier'), self.eat('semicolon')])])
+        #if statement with else part optional.
+        if k == 'keyword' and v == 'if':
+            kids = [self.eat('keyword'), self.eat('left_parenthesis'), self.parse_bool_expr(), self.eat('right_parenthesis'), self.parse_statement()]
+            if self.curr[1] == 'else': kids.extend([self.eat('keyword'), self.parse_statement()])
+            return Node("Statement", [Node("IfStatement", kids)])
+        #while loop statement.
+        if k == 'keyword' and v == 'while': return Node("Statement", [Node("WhileStatement", [self.eat('keyword'), self.eat('left_parenthesis'), self.parse_bool_expr(), self.eat('right_parenthesis'), self.parse_statement()])])
+        #print statement.
+        if k == 'keyword' and v == 'print': return Node("Statement", [Node("PrintStatement", [self.eat('keyword'), self.eat('left_parenthesis'), self.parse_expr(), self.eat('right_parenthesis'), self.eat('semicolon')])])
+        #block { ... }
+        if k == 'left_brace': return Node("Statement", [Node("Block", [self.eat('left_brace')] + self.parse_statement_list('right_brace') + ([self.eat('right_brace')] if self.curr[0] == 'right_brace' else []))])
+        #assignment : x = 10;
+        if k == 'identifier': return Node("Statement", [Node("Assignment", [self.eat('identifier'), self.eat('assignment'), self.parse_expr(), self.eat('semicolon')])])
+        self.error_here(msg=f"syntax error: unexpected start of statement: {self.token_desc(k, v)}")
 
-    def parse_print(self):
-        node = Node("PrintStatement")
-        node.children.append(self.eat('keyword')) # print
-        node.children.append(self.eat('left_parenthesis'))
-        node.children.append(self.parse_expr())
-        node.children.append(self.eat('right_parenthesis'))
-        node.children.append(self.eat('semicolon'))
-        return node
+    
+    '''Program
+       StatementList
+       Statement StatementList
+       Declaration StatementList
+       int id ; StatementList
+    ...
+    '''
+    #for getting the leftmost and rightmost derivation steps like above.
+    def get_derivation(self, root, mode="left"):
+        steps, form = [], [root]
+        steps.append(" ".join(n.name for n in form))
+        while not all(n.is_terminal for n in form):
+            idx = next(i for i in (range(len(form)) if mode == "left" else range(len(form)-1, -1, -1)) if not form[i].is_terminal)
+            form = form[:idx] + form[idx].children + form[idx+1:]
+            steps.append(" ".join(n.name for n in form))
+        return steps
 
+    def print_tree(self, node, level=0):
+        if self.flags['tree']:
+            print("  " * level + "|-- " + str(node.name))
+            for c in node.children: self.print_tree(c, level + 1)
 
-# Usage:
-# p = Parser(tokens, show_gui_tree=True)
-# root = p.parse_program()
+    def parse_program(self):
+        root = Node("Program", self.parse_statement_list())
+        if self.errors: raise SyntaxErrors(self.errors)
+        print("Syntactic Validation Successful.")
+        if self.flags['gui']:
+            from tree_view import draw_with_nltk; draw_with_nltk(root, hide_terminals=True)
+        self.print_tree(root)
+        for m in ['left', 'right']:
+            if self.flags[m]:
+                print(f"\n--- {m.capitalize()}most Derivation ---")
+                for i, step in enumerate(self.get_derivation(root, m)): print(f" {'=>' if i else '  '} {step}")
+        return root

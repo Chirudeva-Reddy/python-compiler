@@ -13,7 +13,7 @@
 # Your lexical analyzer must correctly tokenize the entire evaluation program provided.
 
 import re
-
+# Lexer error class to handle unexpected characters. 
 class LexerError(RuntimeError):
     def __init__(self, message, line, col):
         super().__init__(f"{message} at line {line}, column {col}")
