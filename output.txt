@@ -83,7 +83,12 @@ Syntactic Validation Successful.
  => while ( Term < 10 ) { a = a + 1 ; }
  => while ( Factor < 10 ) { a = a + 1 ; }
  => while ( a < 10 ) { a = a + 1 ; }
-  PHASE 2: LL(1) Table-Driven Parser
+
+
+
+
+
+ LL(1) Table-Driven Parser
 ============================================================
 
 ==================================================
@@ -245,33 +250,53 @@ Syntactic Validation Successful.
 >> Result: Parsing Successful
 
 ============================================================
-  PHASE 3: SLR(1) Shift-Reduce Parser
+Shift-Reduce Parser
 ============================================================
 
 ==================================================
-  Shift-Reduce Parsing Trace (Longest-Match Greedy)
+  Shift-Reduce Parsing Trace (Heuristic Relaxed)
 ==================================================
   Stack                                                                                      Input                                                                  Action                                            
   ------------------------------------------------------------------------------------------ ---------------------------------------------------------------------- --------------------------------------------------
-  [TOP]                                                                                      while ( a < 10 ) { a = a + 1 ; } $                                     Shift 'while'                                     
-  WHILE <- [TOP]                                                                             ( a < 10 ) { a = a + 1 ; } $                                           Shift '('                                         
-  WHILE LPAREN <- [TOP]                                                                      a < 10 ) { a = a + 1 ; } $                                             Shift 'a'                                         
-  WHILE LPAREN ID <- [TOP]                                                                   < 10 ) { a = a + 1 ; } $                                               Reduce Factor -> ID                               
-  WHILE LPAREN Factor <- [TOP]                                                               < 10 ) { a = a + 1 ; } $                                               Shift '<'                                         
-  WHILE LPAREN Factor RELOP <- [TOP]                                                         10 ) { a = a + 1 ; } $                                                 Shift '10'                                        
-  WHILE LPAREN Factor RELOP INT_CONST <- [TOP]                                               ) { a = a + 1 ; } $                                                    Reduce Factor -> INT_CONST                        
-  WHILE LPAREN Factor RELOP Factor <- [TOP]                                                  ) { a = a + 1 ; } $                                                    Shift ')'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN <- [TOP]                                           { a = a + 1 ; } $                                                      Shift '{'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE <- [TOP]                                    a = a + 1 ; } $                                                        Shift 'a'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE ID <- [TOP]                                 = a + 1 ; } $                                                          Reduce Factor -> ID                               
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor <- [TOP]                             = a + 1 ; } $                                                          Shift '='                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN <- [TOP]                      a + 1 ; } $                                                            Shift 'a'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN ID <- [TOP]                   + 1 ; } $                                                              Reduce Factor -> ID                               
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor <- [TOP]               + 1 ; } $                                                              Shift '+'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP <- [TOP]         1 ; } $                                                                Shift '1'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP INT_CONST <- [TOP] ; } $                                                                  Reduce Factor -> INT_CONST                        
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP Factor <- [TOP]  ; } $                                                                  Shift ';'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP Factor SEMI <- [TOP] } $                                                                    Shift '}'                                         
-  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP Factor SEMI RBRACE <- [TOP] $                                                                      >> ERROR (Stuck)                                  
+                                                                                             while ( a < 10 ) { a = a + 1 ; } $                                     SHIFT 'while'                                     
+  WHILE                                                                                      ( a < 10 ) { a = a + 1 ; } $                                           SHIFT '('                                         
+  WHILE LPAREN                                                                               a < 10 ) { a = a + 1 ; } $                                             SHIFT 'a'                                         
+  WHILE LPAREN ID                                                                            < 10 ) { a = a + 1 ; } $                                               REDUCE Factor -> ID                               
+  WHILE LPAREN Factor                                                                        < 10 ) { a = a + 1 ; } $                                               REDUCE Term -> Factor                             
+  WHILE LPAREN Term                                                                          < 10 ) { a = a + 1 ; } $                                               REDUCE Expr -> Term                               
+  WHILE LPAREN Expr                                                                          < 10 ) { a = a + 1 ; } $                                               SHIFT '<'                                         
+  WHILE LPAREN Expr RELOP                                                                    10 ) { a = a + 1 ; } $                                                 SHIFT '10'                                        
+  WHILE LPAREN Expr RELOP INT_CONST                                                          ) { a = a + 1 ; } $                                                    REDUCE Factor -> INT_CONST                        
+  WHILE LPAREN Expr RELOP Factor                                                             ) { a = a + 1 ; } $                                                    REDUCE Term -> Factor                             
+  WHILE LPAREN Expr RELOP Term                                                               ) { a = a + 1 ; } $                                                    REDUCE Expr -> Term                               
+  WHILE LPAREN Expr RELOP Expr                                                               ) { a = a + 1 ; } $                                                    REDUCE Expr -> Expr RELOP Expr                    
+  WHILE LPAREN Expr                                                                          ) { a = a + 1 ; } $                                                    SHIFT ')'                                         
+  WHILE LPAREN Expr RPAREN                                                                   { a = a + 1 ; } $                                                      SHIFT '{'                                         
+  WHILE LPAREN Expr RPAREN LBRACE                                                            a = a + 1 ; } $                                                        SHIFT 'a'                                         
+  WHILE LPAREN Expr RPAREN LBRACE ID                                                         = a + 1 ; } $                                                          REDUCE Factor -> ID                               
+  WHILE LPAREN Expr RPAREN LBRACE Factor                                                     = a + 1 ; } $                                                          REDUCE Term -> Factor                             
+  WHILE LPAREN Expr RPAREN LBRACE Term                                                       = a + 1 ; } $                                                          REDUCE Expr -> Term                               
+  WHILE LPAREN Expr RPAREN LBRACE Expr                                                       = a + 1 ; } $                                                          SHIFT '='                                         
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN                                                a + 1 ; } $                                                            SHIFT 'a'                                         
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN ID                                             + 1 ; } $                                                              REDUCE Factor -> ID                               
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Factor                                         + 1 ; } $                                                              REDUCE Term -> Factor                             
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Term                                           + 1 ; } $                                                              REDUCE Expr -> Term                               
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr                                           + 1 ; } $                                                              SHIFT '+'                                         
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr ADDOP                                     1 ; } $                                                                SHIFT '1'                                         
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr ADDOP INT_CONST                           ; } $                                                                  REDUCE Factor -> INT_CONST                        
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr ADDOP Factor                              ; } $                                                                  REDUCE Term -> Factor                             
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr ADDOP Term                                ; } $                                                                  REDUCE Expr -> Term                               
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr ADDOP Expr                                ; } $                                                                  REDUCE Expr -> Expr ADDOP Expr                    
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr                                           ; } $                                                                  SHIFT ';'                                         
+  WHILE LPAREN Expr RPAREN LBRACE Expr ASSIGN Expr SEMI                                      } $                                                                    REDUCE Assign -> Expr ASSIGN Expr SEMI            
+  WHILE LPAREN Expr RPAREN LBRACE Assign                                                     } $                                                                    REDUCE Stmt -> Assign                             
+  WHILE LPAREN Expr RPAREN LBRACE Stmt                                                       } $                                                                    REDUCE StmtList -> Stmt                           
+  WHILE LPAREN Expr RPAREN LBRACE StmtList                                                   } $                                                                    SHIFT '}'                                         
+  WHILE LPAREN Expr RPAREN LBRACE StmtList RBRACE                                            $                                                                      REDUCE Block -> LBRACE StmtList RBRACE            
+  WHILE LPAREN Expr RPAREN Block                                                             $                                                                      REDUCE WhileStmt -> WHILE LPAREN Expr RPAREN Block
+  WhileStmt                                                                                  $                                                                      REDUCE Stmt -> WhileStmt                          
+  Stmt                                                                                       $                                                                      REDUCE StmtList -> Stmt                           
+  StmtList                                                                                   $                                                                      REDUCE Program -> StmtList                        
+  Program                                                                                    $                                                                      >> ACCEPT                                         
 
->> Parsing Error: Could not shift or reduce any further.
+>> Result: Parsing Successful
