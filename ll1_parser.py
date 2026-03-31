@@ -83,7 +83,7 @@ class LL1Parser:
         print("\n" + "=" * 50)
         print("  LL(1) Parsing Trace")
         print("=" * 50)
-        sw, iw, aw = 35, 40, 40
+        sw, iw, aw = 90, 70, 50
         print(f"  {'Stack':<{sw}} {'Input':<{iw}} {'Action':<{aw}}")
         print(f"  {'-'*sw} {'-'*iw} {'-'*aw}")
 
@@ -91,10 +91,8 @@ class LL1Parser:
             top = stack[-1]
             curr_term, curr_val = input_syms[ip]
 
-            stack_str = ' '.join(stack)
-            if len(stack_str) > sw - 2: stack_str = "..." + stack_str[-(sw - 5):]
+            stack_str = ' '.join(stack) + " <- [TOP]"
             input_str = ' '.join(v for _, v in input_syms[ip:])
-            if len(input_str) > iw - 2: input_str = input_str[:iw - 5] + "..."
 
             # Accept condition
             if top == '$' and curr_term == '$':
@@ -106,7 +104,6 @@ class LL1Parser:
             elif is_terminal(top) or top == '$':
                 if top == curr_term:
                     action = f"Match '{curr_val}'"
-                    if len(action) > aw - 2: action = action[:aw - 5] + "..."
                     print(f"  {stack_str:<{sw}} {input_str:<{iw}} {action:<{aw}}")
                     stack.pop()
                     ip += 1
@@ -122,7 +119,6 @@ class LL1Parser:
                     prod = self.table[key]
                     prod_str = ' '.join(prod)
                     action = f"Expand {top} -> {prod_str}"
-                    if len(action) > aw - 2: action = action[:aw - 5] + "..."
                     print(f"  {stack_str:<{sw}} {input_str:<{iw}} {action:<{aw}}")
                     stack.pop()
                     # Push RHS in reverse so leftmost symbol is on top

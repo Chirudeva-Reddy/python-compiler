@@ -188,59 +188,59 @@ Syntactic Validation Successful.
 ==================================================
   LL(1) Parsing Trace
 ==================================================
-  Stack                               Input                                    Action                                  
-  ----------------------------------- ---------------------------------------- ----------------------------------------
-  $ Program                           while ( a < 10 ) { a = a + 1 ; } $       Expand Program -> StmtList              
-  $ StmtList                          while ( a < 10 ) { a = a + 1 ; } $       Expand StmtList -> Stmt StmtList        
-  $ StmtList Stmt                     while ( a < 10 ) { a = a + 1 ; } $       Expand Stmt -> WhileStmt                
-  $ StmtList WhileStmt                while ( a < 10 ) { a = a + 1 ; } $       Expand WhileStmt -> WHILE LPAREN Bo...  
-  ...t RPAREN BoolExpr LPAREN WHILE   while ( a < 10 ) { a = a + 1 ; } $       Match 'while'                           
-  ...st Stmt RPAREN BoolExpr LPAREN   ( a < 10 ) { a = a + 1 ; } $             Match '('                               
-  $ StmtList Stmt RPAREN BoolExpr     a < 10 ) { a = a + 1 ; } $               Expand BoolExpr -> BoolTerm BoolETail   
-  ...Stmt RPAREN BoolETail BoolTerm   a < 10 ) { a = a + 1 ; } $               Expand BoolTerm -> BoolFactor BoolT...  
-  ...BoolETail BoolTTail BoolFactor   a < 10 ) { a = a + 1 ; } $               Expand BoolFactor -> Expr RelPart       
-  ...olETail BoolTTail RelPart Expr   a < 10 ) { a = a + 1 ; } $               Expand Expr -> Term ExprTail            
-  ...oolTTail RelPart ExprTail Term   a < 10 ) { a = a + 1 ; } $               Expand Term -> Factor TermTail          
-  ...lPart ExprTail TermTail Factor   a < 10 ) { a = a + 1 ; } $               Expand Factor -> ID                     
-  ...l RelPart ExprTail TermTail ID   a < 10 ) { a = a + 1 ; } $               Match 'a'                               
-  ...Tail RelPart ExprTail TermTail   < 10 ) { a = a + 1 ; } $                 Expand TermTail -> eps                  
-  ...ail BoolTTail RelPart ExprTail   < 10 ) { a = a + 1 ; } $                 Expand ExprTail -> eps                  
-  ...EN BoolETail BoolTTail RelPart   < 10 ) { a = a + 1 ; } $                 Expand RelPart -> RELOP Expr            
-  ...BoolETail BoolTTail Expr RELOP   < 10 ) { a = a + 1 ; } $                 Match '<'                               
-  ...PAREN BoolETail BoolTTail Expr   10 ) { a = a + 1 ; } $                   Expand Expr -> Term ExprTail            
-  ...lETail BoolTTail ExprTail Term   10 ) { a = a + 1 ; } $                   Expand Term -> Factor TermTail          
-  ...TTail ExprTail TermTail Factor   10 ) { a = a + 1 ; } $                   Expand Factor -> INT_CONST              
-  ...il ExprTail TermTail INT_CONST   10 ) { a = a + 1 ; } $                   Match '10'                              
-  ...il BoolTTail ExprTail TermTail   ) { a = a + 1 ; } $                      Expand TermTail -> eps                  
-  ...N BoolETail BoolTTail ExprTail   ) { a = a + 1 ; } $                      Expand ExprTail -> eps                  
-  ...tmt RPAREN BoolETail BoolTTail   ) { a = a + 1 ; } $                      Expand BoolTTail -> eps                 
-  $ StmtList Stmt RPAREN BoolETail    ) { a = a + 1 ; } $                      Expand BoolETail -> eps                 
-  $ StmtList Stmt RPAREN              ) { a = a + 1 ; } $                      Match ')'                               
-  $ StmtList Stmt                     { a = a + 1 ; } $                        Expand Stmt -> Block                    
-  $ StmtList Block                    { a = a + 1 ; } $                        Expand Block -> LBRACE StmtList RBRACE  
-  $ StmtList RBRACE StmtList LBRACE   { a = a + 1 ; } $                        Match '{'                               
-  $ StmtList RBRACE StmtList          a = a + 1 ; } $                          Expand StmtList -> Stmt StmtList        
-  $ StmtList RBRACE StmtList Stmt     a = a + 1 ; } $                          Expand Stmt -> Assign                   
-  $ StmtList RBRACE StmtList Assign   a = a + 1 ; } $                          Expand Assign -> ID ASSIGN Expr SEMI    
-  ...E StmtList SEMI Expr ASSIGN ID   a = a + 1 ; } $                          Match 'a'                               
-  ...RACE StmtList SEMI Expr ASSIGN   = a + 1 ; } $                            Match '='                               
-  ...List RBRACE StmtList SEMI Expr   a + 1 ; } $                              Expand Expr -> Term ExprTail            
-  ...CE StmtList SEMI ExprTail Term   a + 1 ; } $                              Expand Term -> Factor TermTail          
-  ... SEMI ExprTail TermTail Factor   a + 1 ; } $                              Expand Factor -> ID                     
-  ...List SEMI ExprTail TermTail ID   a + 1 ; } $                              Match 'a'                               
-  ...tmtList SEMI ExprTail TermTail   + 1 ; } $                                Expand TermTail -> eps                  
-  ... RBRACE StmtList SEMI ExprTail   + 1 ; } $                                Expand ExprTail -> ADDOP Term ExprTail  
-  ...tList SEMI ExprTail Term ADDOP   + 1 ; } $                                Match '+'                               
-  ...CE StmtList SEMI ExprTail Term   1 ; } $                                  Expand Term -> Factor TermTail          
-  ... SEMI ExprTail TermTail Factor   1 ; } $                                  Expand Factor -> INT_CONST              
-  ...MI ExprTail TermTail INT_CONST   1 ; } $                                  Match '1'                               
-  ...tmtList SEMI ExprTail TermTail   ; } $                                    Expand TermTail -> eps                  
-  ... RBRACE StmtList SEMI ExprTail   ; } $                                    Expand ExprTail -> eps                  
-  $ StmtList RBRACE StmtList SEMI     ; } $                                    Match ';'                               
-  $ StmtList RBRACE StmtList          } $                                      Expand StmtList -> eps                  
-  $ StmtList RBRACE                   } $                                      Match '}'                               
-  $ StmtList                          $                                        Expand StmtList -> eps                  
-  $                                   $                                        >> ACCEPT                               
+  Stack                                                                                      Input                                                                  Action                                            
+  ------------------------------------------------------------------------------------------ ---------------------------------------------------------------------- --------------------------------------------------
+  $ Program <- [TOP]                                                                         while ( a < 10 ) { a = a + 1 ; } $                                     Expand Program -> StmtList                        
+  $ StmtList <- [TOP]                                                                        while ( a < 10 ) { a = a + 1 ; } $                                     Expand StmtList -> Stmt StmtList                  
+  $ StmtList Stmt <- [TOP]                                                                   while ( a < 10 ) { a = a + 1 ; } $                                     Expand Stmt -> WhileStmt                          
+  $ StmtList WhileStmt <- [TOP]                                                              while ( a < 10 ) { a = a + 1 ; } $                                     Expand WhileStmt -> WHILE LPAREN BoolExpr RPAREN Stmt
+  $ StmtList Stmt RPAREN BoolExpr LPAREN WHILE <- [TOP]                                      while ( a < 10 ) { a = a + 1 ; } $                                     Match 'while'                                     
+  $ StmtList Stmt RPAREN BoolExpr LPAREN <- [TOP]                                            ( a < 10 ) { a = a + 1 ; } $                                           Match '('                                         
+  $ StmtList Stmt RPAREN BoolExpr <- [TOP]                                                   a < 10 ) { a = a + 1 ; } $                                             Expand BoolExpr -> BoolTerm BoolETail             
+  $ StmtList Stmt RPAREN BoolETail BoolTerm <- [TOP]                                         a < 10 ) { a = a + 1 ; } $                                             Expand BoolTerm -> BoolFactor BoolTTail           
+  $ StmtList Stmt RPAREN BoolETail BoolTTail BoolFactor <- [TOP]                             a < 10 ) { a = a + 1 ; } $                                             Expand BoolFactor -> Expr RelPart                 
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart Expr <- [TOP]                           a < 10 ) { a = a + 1 ; } $                                             Expand Expr -> Term ExprTail                      
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart ExprTail Term <- [TOP]                  a < 10 ) { a = a + 1 ; } $                                             Expand Term -> Factor TermTail                    
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart ExprTail TermTail Factor <- [TOP]       a < 10 ) { a = a + 1 ; } $                                             Expand Factor -> ID                               
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart ExprTail TermTail ID <- [TOP]           a < 10 ) { a = a + 1 ; } $                                             Match 'a'                                         
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart ExprTail TermTail <- [TOP]              < 10 ) { a = a + 1 ; } $                                               Expand TermTail -> eps                            
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart ExprTail <- [TOP]                       < 10 ) { a = a + 1 ; } $                                               Expand ExprTail -> eps                            
+  $ StmtList Stmt RPAREN BoolETail BoolTTail RelPart <- [TOP]                                < 10 ) { a = a + 1 ; } $                                               Expand RelPart -> RELOP Expr                      
+  $ StmtList Stmt RPAREN BoolETail BoolTTail Expr RELOP <- [TOP]                             < 10 ) { a = a + 1 ; } $                                               Match '<'                                         
+  $ StmtList Stmt RPAREN BoolETail BoolTTail Expr <- [TOP]                                   10 ) { a = a + 1 ; } $                                                 Expand Expr -> Term ExprTail                      
+  $ StmtList Stmt RPAREN BoolETail BoolTTail ExprTail Term <- [TOP]                          10 ) { a = a + 1 ; } $                                                 Expand Term -> Factor TermTail                    
+  $ StmtList Stmt RPAREN BoolETail BoolTTail ExprTail TermTail Factor <- [TOP]               10 ) { a = a + 1 ; } $                                                 Expand Factor -> INT_CONST                        
+  $ StmtList Stmt RPAREN BoolETail BoolTTail ExprTail TermTail INT_CONST <- [TOP]            10 ) { a = a + 1 ; } $                                                 Match '10'                                        
+  $ StmtList Stmt RPAREN BoolETail BoolTTail ExprTail TermTail <- [TOP]                      ) { a = a + 1 ; } $                                                    Expand TermTail -> eps                            
+  $ StmtList Stmt RPAREN BoolETail BoolTTail ExprTail <- [TOP]                               ) { a = a + 1 ; } $                                                    Expand ExprTail -> eps                            
+  $ StmtList Stmt RPAREN BoolETail BoolTTail <- [TOP]                                        ) { a = a + 1 ; } $                                                    Expand BoolTTail -> eps                           
+  $ StmtList Stmt RPAREN BoolETail <- [TOP]                                                  ) { a = a + 1 ; } $                                                    Expand BoolETail -> eps                           
+  $ StmtList Stmt RPAREN <- [TOP]                                                            ) { a = a + 1 ; } $                                                    Match ')'                                         
+  $ StmtList Stmt <- [TOP]                                                                   { a = a + 1 ; } $                                                      Expand Stmt -> Block                              
+  $ StmtList Block <- [TOP]                                                                  { a = a + 1 ; } $                                                      Expand Block -> LBRACE StmtList RBRACE            
+  $ StmtList RBRACE StmtList LBRACE <- [TOP]                                                 { a = a + 1 ; } $                                                      Match '{'                                         
+  $ StmtList RBRACE StmtList <- [TOP]                                                        a = a + 1 ; } $                                                        Expand StmtList -> Stmt StmtList                  
+  $ StmtList RBRACE StmtList Stmt <- [TOP]                                                   a = a + 1 ; } $                                                        Expand Stmt -> Assign                             
+  $ StmtList RBRACE StmtList Assign <- [TOP]                                                 a = a + 1 ; } $                                                        Expand Assign -> ID ASSIGN Expr SEMI              
+  $ StmtList RBRACE StmtList SEMI Expr ASSIGN ID <- [TOP]                                    a = a + 1 ; } $                                                        Match 'a'                                         
+  $ StmtList RBRACE StmtList SEMI Expr ASSIGN <- [TOP]                                       = a + 1 ; } $                                                          Match '='                                         
+  $ StmtList RBRACE StmtList SEMI Expr <- [TOP]                                              a + 1 ; } $                                                            Expand Expr -> Term ExprTail                      
+  $ StmtList RBRACE StmtList SEMI ExprTail Term <- [TOP]                                     a + 1 ; } $                                                            Expand Term -> Factor TermTail                    
+  $ StmtList RBRACE StmtList SEMI ExprTail TermTail Factor <- [TOP]                          a + 1 ; } $                                                            Expand Factor -> ID                               
+  $ StmtList RBRACE StmtList SEMI ExprTail TermTail ID <- [TOP]                              a + 1 ; } $                                                            Match 'a'                                         
+  $ StmtList RBRACE StmtList SEMI ExprTail TermTail <- [TOP]                                 + 1 ; } $                                                              Expand TermTail -> eps                            
+  $ StmtList RBRACE StmtList SEMI ExprTail <- [TOP]                                          + 1 ; } $                                                              Expand ExprTail -> ADDOP Term ExprTail            
+  $ StmtList RBRACE StmtList SEMI ExprTail Term ADDOP <- [TOP]                               + 1 ; } $                                                              Match '+'                                         
+  $ StmtList RBRACE StmtList SEMI ExprTail Term <- [TOP]                                     1 ; } $                                                                Expand Term -> Factor TermTail                    
+  $ StmtList RBRACE StmtList SEMI ExprTail TermTail Factor <- [TOP]                          1 ; } $                                                                Expand Factor -> INT_CONST                        
+  $ StmtList RBRACE StmtList SEMI ExprTail TermTail INT_CONST <- [TOP]                       1 ; } $                                                                Match '1'                                         
+  $ StmtList RBRACE StmtList SEMI ExprTail TermTail <- [TOP]                                 ; } $                                                                  Expand TermTail -> eps                            
+  $ StmtList RBRACE StmtList SEMI ExprTail <- [TOP]                                          ; } $                                                                  Expand ExprTail -> eps                            
+  $ StmtList RBRACE StmtList SEMI <- [TOP]                                                   ; } $                                                                  Match ';'                                         
+  $ StmtList RBRACE StmtList <- [TOP]                                                        } $                                                                    Expand StmtList -> eps                            
+  $ StmtList RBRACE <- [TOP]                                                                 } $                                                                    Match '}'                                         
+  $ StmtList <- [TOP]                                                                        $                                                                      Expand StmtList -> eps                            
+  $ <- [TOP]                                                                                 $                                                                      >> ACCEPT                                         
 
 >> Result: Parsing Successful
 
@@ -249,181 +249,29 @@ Syntactic Validation Successful.
 ============================================================
 
 ==================================================
-  FIRST Sets (SLR Grammar)
+  Shift-Reduce Parsing Trace (Longest-Match Greedy)
 ==================================================
-  FIRST(Program') = { ID, PRINT, TYPE }
-  FIRST(Program) = { ID, PRINT, TYPE }
-  FIRST(StmtList) = { ID, PRINT, TYPE }
-  FIRST(Stmt) = { ID, PRINT, TYPE }
-  FIRST(Decl) = { TYPE }
-  FIRST(PrintStmt) = { PRINT }
-  FIRST(Assign) = { ID }
-  FIRST(Expr) = { FLOAT_CONST, ID, INT_CONST, LPAREN }
-  FIRST(Term) = { FLOAT_CONST, ID, INT_CONST, LPAREN }
-  FIRST(Factor) = { FLOAT_CONST, ID, INT_CONST, LPAREN }
+  Stack                                                                                      Input                                                                  Action                                            
+  ------------------------------------------------------------------------------------------ ---------------------------------------------------------------------- --------------------------------------------------
+  [TOP]                                                                                      while ( a < 10 ) { a = a + 1 ; } $                                     Shift 'while'                                     
+  WHILE <- [TOP]                                                                             ( a < 10 ) { a = a + 1 ; } $                                           Shift '('                                         
+  WHILE LPAREN <- [TOP]                                                                      a < 10 ) { a = a + 1 ; } $                                             Shift 'a'                                         
+  WHILE LPAREN ID <- [TOP]                                                                   < 10 ) { a = a + 1 ; } $                                               Reduce Factor -> ID                               
+  WHILE LPAREN Factor <- [TOP]                                                               < 10 ) { a = a + 1 ; } $                                               Shift '<'                                         
+  WHILE LPAREN Factor RELOP <- [TOP]                                                         10 ) { a = a + 1 ; } $                                                 Shift '10'                                        
+  WHILE LPAREN Factor RELOP INT_CONST <- [TOP]                                               ) { a = a + 1 ; } $                                                    Reduce Factor -> INT_CONST                        
+  WHILE LPAREN Factor RELOP Factor <- [TOP]                                                  ) { a = a + 1 ; } $                                                    Shift ')'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN <- [TOP]                                           { a = a + 1 ; } $                                                      Shift '{'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE <- [TOP]                                    a = a + 1 ; } $                                                        Shift 'a'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE ID <- [TOP]                                 = a + 1 ; } $                                                          Reduce Factor -> ID                               
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor <- [TOP]                             = a + 1 ; } $                                                          Shift '='                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN <- [TOP]                      a + 1 ; } $                                                            Shift 'a'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN ID <- [TOP]                   + 1 ; } $                                                              Reduce Factor -> ID                               
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor <- [TOP]               + 1 ; } $                                                              Shift '+'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP <- [TOP]         1 ; } $                                                                Shift '1'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP INT_CONST <- [TOP] ; } $                                                                  Reduce Factor -> INT_CONST                        
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP Factor <- [TOP]  ; } $                                                                  Shift ';'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP Factor SEMI <- [TOP] } $                                                                    Shift '}'                                         
+  WHILE LPAREN Factor RELOP Factor RPAREN LBRACE Factor ASSIGN Factor ADDOP Factor SEMI RBRACE <- [TOP] $                                                                      >> ERROR (Stuck)                                  
 
-==================================================
-  FOLLOW Sets (SLR Grammar)
-==================================================
-  FOLLOW(Program') = { $ }
-  FOLLOW(Program) = { $ }
-  FOLLOW(StmtList) = { $ }
-  FOLLOW(Stmt) = { $, ID, PRINT, TYPE }
-  FOLLOW(Decl) = { $, ID, PRINT, TYPE }
-  FOLLOW(PrintStmt) = { $, ID, PRINT, TYPE }
-  FOLLOW(Assign) = { $, ID, PRINT, TYPE }
-  FOLLOW(Expr) = { ADDOP, RPAREN, SEMI }
-  FOLLOW(Term) = { ADDOP, MULOP, RPAREN, SEMI }
-  FOLLOW(Factor) = { ADDOP, MULOP, RPAREN, SEMI }
-
-==================================================
-  SLR ACTION Table
-==================================================
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|   State \ Terminal | ADDOP    | ASSIGN   | FLOAT_CONST   | ID          | INT_CONST   | LPAREN   | MULOP    | PRINT       | RPAREN   | SEMI     | TYPE        | $           |
-+====================+==========+==========+===============+=============+=============+==========+==========+=============+==========+==========+=============+=============+
-|                  0 |          |          |               | s8          |             |          |          | s6          |          |          | s5          |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  1 |          |          |               |             |             |          |          |             |          |          |             | r:Program   |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  2 |          |          |               | s8          |             |          |          | s6          |          |          | s5          | r:StmtList  |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  3 |          |          |               | r:Stmt      |             |          |          | r:Stmt      |          |          | r:Stmt      | r:Stmt      |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  4 |          |          |               | r:Stmt      |             |          |          | r:Stmt      |          |          | r:Stmt      | r:Stmt      |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  5 |          |          |               | s11         |             |          |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  6 |          |          |               |             |             | s12      |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  7 |          |          |               |             |             |          |          |             |          |          |             | ACC         |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  8 |          | s13      |               |             |             |          |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                  9 |          |          |               | r:Stmt      |             |          |          | r:Stmt      |          |          | r:Stmt      | r:Stmt      |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 10 |          |          |               |             |             |          |          |             |          |          |             | r:StmtList  |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 11 |          |          |               |             |             |          |          |             |          | s14      |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 12 |          |          | s21           | s20         | s18         | s15      |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 13 |          |          | s21           | s20         | s18         | s15      |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 14 |          |          |               | r:Decl      |             |          |          | r:Decl      |          |          | r:Decl      | r:Decl      |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 15 |          |          | s21           | s20         | s18         | s15      |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 16 | s24      |          |               |             |             |          |          |             | s25      |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 17 | r:Term   |          |               |             |             |          | r:Term   |             | r:Term   | r:Term   |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 18 | r:Factor |          |               |             |             |          | r:Factor |             | r:Factor | r:Factor |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 19 | r:Expr   |          |               |             |             |          | s26      |             | r:Expr   | r:Expr   |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 20 | r:Factor |          |               |             |             |          | r:Factor |             | r:Factor | r:Factor |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 21 | r:Factor |          |               |             |             |          | r:Factor |             | r:Factor | r:Factor |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 22 | s24      |          |               |             |             |          |          |             |          | s27      |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 23 | s24      |          |               |             |             |          |          |             | s28      |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 24 |          |          | s21           | s20         | s18         | s15      |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 25 |          |          |               |             |             |          |          |             |          | s30      |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 26 |          |          | s21           | s20         | s18         | s15      |          |             |          |          |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 27 |          |          |               | r:Assign    |             |          |          | r:Assign    |          |          | r:Assign    | r:Assign    |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 28 | r:Factor |          |               |             |             |          | r:Factor |             | r:Factor | r:Factor |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 29 | r:Expr   |          |               |             |             |          | s26      |             | r:Expr   | r:Expr   |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 30 |          |          |               | r:PrintStmt |             |          |          | r:PrintStmt |          |          | r:PrintStmt | r:PrintStmt |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-|                 31 | r:Term   |          |               |             |             |          | r:Term   |             | r:Term   | r:Term   |             |             |
-+--------------------+----------+----------+---------------+-------------+-------------+----------+----------+-------------+----------+----------+-------------+-------------+
-
-==================================================
-  SLR GOTO Table
-==================================================
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|   State \ NonTerminal |   Assign |   Decl |   Expr |   Factor |   PrintStmt |   Program |   Stmt |   StmtList |   Term |
-+=======================+==========+========+========+==========+=============+===========+========+============+========+
-|                     0 |        3 |      4 |        |          |           9 |         7 |      2 |          1 |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     1 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     2 |        3 |      4 |        |          |           9 |           |      2 |         10 |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     3 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     4 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     5 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     6 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     7 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     8 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                     9 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    10 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    11 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    12 |          |        |     16 |       17 |             |           |        |            |     19 |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    13 |          |        |     22 |       17 |             |           |        |            |     19 |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    14 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    15 |          |        |     23 |       17 |             |           |        |            |     19 |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    16 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    17 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    18 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    19 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    20 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    21 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    22 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    23 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    24 |          |        |        |       17 |             |           |        |            |     29 |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    25 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    26 |          |        |        |       31 |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    27 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    28 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    29 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    30 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-|                    31 |          |        |        |          |             |           |        |            |        |
-+-----------------------+----------+--------+--------+----------+-------------+-----------+--------+------------+--------+
-
-==================================================
-  SLR Parsing Trace
-==================================================
-  Stack                                    Input                               Action                                       
-  ---------------------------------------- ----------------------------------- ---------------------------------------------
-  0                                        ( a 10 ) a = a + 1 ; $              >> ERROR                                     
-
->> Parsing Error: unexpected 'LPAREN' ('(') in state 0
-   Expected one of: ID, PRINT, TYPE
+>> Parsing Error: Could not shift or reduce any further.

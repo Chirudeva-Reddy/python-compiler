@@ -72,7 +72,7 @@ except SyntaxError as e:
 #Table Driven Parser Code:
 import sys
 from ll1_parser import LL1Parser
-from slr_parser import SLRParser
+from slr_parser import ShiftReduceParser
 from grammar import (compute_first_sets, compute_follow_sets,
                      print_first_sets, print_follow_sets)
 
@@ -90,8 +90,6 @@ ll1.parse(tokens)
 print("\n" + "=" * 60)
 print("  PHASE 3: SLR(1) Shift-Reduce Parser")
 print("=" * 60)
-slr = SLRParser()
-slr.print_first_follow()
-slr.print_tables()
+slr = ShiftReduceParser()
 slr.parse(tokens)
 
