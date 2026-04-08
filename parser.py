@@ -98,7 +98,13 @@ class Parser:  #All the functions defined below are parts of Parser class.
     def parse_bool_factor(self):
         v = self.curr[1]
         if v == '!': return Node("BooleanFactor", [self.eat('boolean_operator'), self.parse_bool_factor()])
-        if v == '(': return Node("BooleanFactor", [self.eat('left_parenthesis'), self.parse_bool_expr(), self.eat('right_parenthesis')])
+        if v == '(':
+            self.eat('left_parenthesis')
+            kids = [self.parse_expr()]
+            if self.curr[0] == 'relational_operator':
+                kids.extend([self.eat('relational_operator'), self.parse_expr()])
+            self.eat('right_parenthesis')
+            return Node("BooleanFactor", kids)
         kids = [self.parse_expr()]
         if self.curr[0] == 'relational_operator': kids.extend([self.eat('relational_operator'), self.parse_expr()])
         return Node("BooleanFactor", kids)
