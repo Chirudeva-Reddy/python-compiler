@@ -1,0 +1,8 @@
+int x;
+x = 1;
+m = x + 2;
+{
+    int y;
+    y = x + z;
+}
+print(x);

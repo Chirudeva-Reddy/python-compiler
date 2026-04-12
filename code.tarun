@@ -1,1 +1,23 @@
-if ((a+b)<c) {}
+int x;
+int limit;
+float ratio;
+x = 2;
+limit = 5;
+ratio = 2.5;
+{
+    int x;
+    x = 3;
+    if (x < limit && limit < 10) {
+        float ratio;
+        ratio = 7.5;
+        print(x);
+        print(limit);
+    }
+    while (x < limit) {
+        x = x + 1;
+        print(x);
+    }
+}
+print(x);
+print(limit);
+print(ratio);
