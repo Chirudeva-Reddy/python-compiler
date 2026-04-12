@@ -1,6 +1,35 @@
 class Node:
-    def __init__(self, name, children=None, is_terminal=False):
-        self.name, self.children, self.is_terminal = name, children or [], is_terminal
+    """Parse-tree node used by the recursive-descent parser."""
+
+    def __init__(
+        self,
+        name,
+        children=None,
+        is_terminal=False,
+        token_kind=None,
+        token_value=None,
+        line=None,
+        col=None,
+    ):
+        self.name = name
+        self.children = children or []
+        self.is_terminal = is_terminal
+        self.token_kind = token_kind
+        self.token_value = token_value
+        self.line = line
+        self.col = col
+
+    def first_terminal(self):
+        """Return the first terminal token contained in this subtree."""
+        if self.is_terminal:
+            return self
+
+        for child in self.children:
+            token = child.first_terminal()
+            if token is not None:
+                return token
+
+        return None
 
 class SyntaxErrors(Exception):
     def __init__(self, errors):
@@ -55,10 +84,17 @@ class Parser:  #All the functions defined below are parts of Parser class.
 
     # this function consumes the current token if it matches the expected kind.
     def eat(self, exp):
-        k, v, _, _ = self.curr 
+        k, v, line, col = self.curr 
         if k == exp: #if the current token's kind matches expected, we increment position.
             self.pos += 1
-            return Node(v, is_terminal=True)
+            return Node(
+                v,
+                is_terminal=True,
+                token_kind=k,
+                token_value=v,
+                line=line,
+                col=col,
+            )
         if exp == 'semicolon' and self.pos > 0:
             self.error_here(exp,line=self.prev[2], col=self.prev[3] + len(str(self.prev[1])))
         self.error_here(exp)
@@ -98,7 +134,20 @@ class Parser:  #All the functions defined below are parts of Parser class.
     def parse_bool_factor(self):
         v = self.curr[1]
         if v == '!': return Node("BooleanFactor", [self.eat('boolean_operator'), self.parse_bool_factor()])
-        if v == '(': return Node("BooleanFactor", [self.eat('left_parenthesis'), self.parse_bool_expr(), self.eat('right_parenthesis')])
+        if v == '(':
+            start = self.pos
+            try:
+                kids = [self.parse_expr()]
+                if self.curr[0] == 'relational_operator':
+                    kids.extend([self.eat('relational_operator'), self.parse_expr()])
+                return Node("BooleanFactor", kids)
+            except SyntaxError as expr_error:
+                self.pos = start
+                try:
+                    return Node("BooleanFactor", [self.eat('left_parenthesis'), self.parse_bool_expr(), self.eat('right_parenthesis')])
+                except SyntaxError:
+                    self.pos = start
+                    raise expr_error
         kids = [self.parse_expr()]
         if self.curr[0] == 'relational_operator': kids.extend([self.eat('relational_operator'), self.parse_expr()])
         return Node("BooleanFactor", kids)
