@@ -1,23 +1,13 @@
 int x;
-int limit;
-float ratio;
-x = 2;
-limit = 5;
-ratio = 2.5;
-{
-    int x;
-    x = 3;
-    if (x < limit && limit < 10) {
-        float ratio;
-        ratio = 7.5;
-        print(x);
-        print(limit);
-    }
-    while (x < limit) {
-        x = x + 1;
-        print(x);
-    }
+float y;
+x = 1;
+y = 2.0;
+if (x < 1 && x>20) {
+    print(x);
 }
-print(x);
-print(limit);
-print(ratio);
+while (x != 3) {
+    x = x + 1;
+}
+if (y == 3.0) {
+    print(x);
+}

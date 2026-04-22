@@ -79,6 +79,24 @@ def run_semantic_analysis(root, source_path, code):
     print("Semantic Validation Successful.")
     return True
 
+from tac import TACGenerator
+
+def run_tac_generation(root):
+    """Generate Three-Address Code (Quadruples) from the AST and print it."""
+    print("\n\n\n Three-Address Code Generation")
+    print("=" * 60)
+    gen = TACGenerator()
+    quads = gen.generate(root)
+
+    print("\n--- Readable TAC ---")
+    print(TACGenerator.format_readable(quads))
+
+    print("\n--- Quadruples Table (op, arg1, arg2, result) ---")
+    print(TACGenerator.format_quads(quads))
+
+    print(f"\n  Total instructions: {len(quads)}")
+    print("\nTAC Generation Successful.")
+
 
 def main(argv=None):
     """Run lexical, syntactic, semantic, LL(1), and SLR analysis."""
@@ -113,21 +131,24 @@ def main(argv=None):
         if not run_semantic_analysis(root, source_path, code):
             return 1
 
-        print("\n\n\n LL(1) Table-Driven Parser")
-        print("=" * 60)
-        ll1_parser = LL1Parser()
-        print_first_sets(ll1_parser.first)
-        print_follow_sets(ll1_parser.follow)
-        ll1_parser.print_table()
-        if not ll1_parser.parse(tokens):
-            return 1
+        # print("\n\n\n LL(1) Table-Driven Parser")
+        # print("=" * 60)
+        # ll1_parser = LL1Parser()
+        # print_first_sets(ll1_parser.first)
+        # print_follow_sets(ll1_parser.follow)
+        # ll1_parser.print_table()
+        # if not ll1_parser.parse(tokens):
+        #     return 1
 
-        print("\n\n\n SLR Table-Driven Shift-Reduce Parser")
-        print("=" * 60)
-        slr_parser = ShiftReduceParser()
-        slr_parser.print_tables()
-        if not slr_parser.parse(tokens):
-            return 1
+        # print("\n\n\n SLR Table-Driven Shift-Reduce Parser")
+        # print("=" * 60)
+        # slr_parser = ShiftReduceParser()
+        # slr_parser.print_tables()
+        # if not slr_parser.parse(tokens):
+        #     return 1
+
+        run_tac_generation(root)
+        
     except SyntaxErrors as errors:
         for error in errors.errors:
             print_error(
